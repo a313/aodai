@@ -48,7 +48,7 @@ class _ActionPageState extends State<ActionPage> {
                 child: AoDaiImage(imagePath: "assets/png/white.png"),
               ),
             ),
-            SizedBox(width: 20, height: double.infinity),
+            Container(width: 20, height: double.infinity, color: Colors.grey),
             // Selectable images
             Expanded(
               flex: widget.images.length,
