@@ -35,12 +35,18 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
   final CarouselSliderController _carouselController =
       CarouselSliderController();
   int _currentPage = 0;
-  List<int> _currentImages = [1, 2, 3, 4];
+  // Separate image lists for each ActionPage
+  final List<int> _actionPage1Images = [1, 2, 3, 4];
+  List<int> _actionPage2Images = [1, 2, 3, 4];
+  List<int> _actionPage3Images = [1, 2, 3, 4];
+  List<int> _actionPage4Images = [1, 2, 3, 4];
   List<Widget> _pages = [];
   final int _firstActionPageIndex = 3; // Index của ActionPage đầu tiên
   final int _lastActionPageIndex = 6; // Index của ActionPage cuối cùng
   bool _isInActionPages = false;
   bool _isAnimating = false;
+  // Track if user has selected an image for each ActionPage (index 0-3 corresponds to ActionPage 1-4)
+  final List<bool> _hasSelectedImageList = [false, false, false, false];
 
   @override
   void initState() {
@@ -53,24 +59,40 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
       Page1(),
       Page2(),
       Page3(),
+      //4
       ActionPage(
-        images: _currentImages,
-        onImageSelected: _handleImageSelected,
+        key: ValueKey(_actionPage1Images),
+        images: _actionPage1Images,
+        onImageSelected:
+            (selectedImage, remainingImages) =>
+                _handleImageSelected(selectedImage, remainingImages, 1),
         onAnimationStateChanged: _handleAnimationStateChanged,
       ),
+      //3
       ActionPage(
-        images: _currentImages,
-        onImageSelected: _handleImageSelected,
+        key: ValueKey(_actionPage2Images),
+        images: _actionPage2Images,
+        onImageSelected:
+            (selectedImage, remainingImages) =>
+                _handleImageSelected(selectedImage, remainingImages, 2),
         onAnimationStateChanged: _handleAnimationStateChanged,
       ),
+      //2
       ActionPage(
-        images: _currentImages,
-        onImageSelected: _handleImageSelected,
+        key: ValueKey(_actionPage3Images),
+        images: _actionPage3Images,
+        onImageSelected:
+            (selectedImage, remainingImages) =>
+                _handleImageSelected(selectedImage, remainingImages, 3),
         onAnimationStateChanged: _handleAnimationStateChanged,
       ),
+      //1
       ActionPage(
-        images: _currentImages,
-        onImageSelected: _handleImageSelected,
+        key: ValueKey(_actionPage4Images),
+        images: _actionPage4Images,
+        onImageSelected:
+            (selectedImage, remainingImages) =>
+                _handleImageSelected(selectedImage, remainingImages, 4),
         onAnimationStateChanged: _handleAnimationStateChanged,
       ),
       Page7(),
@@ -80,25 +102,40 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
   void _handleAnimationStateChanged(bool isAnimating) {
     setState(() {
       _isAnimating = isAnimating;
+      // When animation completes, mark that user has selected an image for current ActionPage
+      if (!isAnimating && _isInActionPages) {
+        int actionPageNumber = _currentPage - _firstActionPageIndex;
+        if (actionPageNumber >= 0 &&
+            actionPageNumber < _hasSelectedImageList.length) {
+          _hasSelectedImageList[actionPageNumber] = true;
+        }
+      }
     });
   }
 
-  void _handleImageSelected(int selectedImage, List<int> remainingImages) {
-    if (remainingImages.isEmpty) {
-      // No more images, go to final page
-      setState(() {
-        _isInActionPages = false;
-      });
-      _nextPage();
-    } else {
-      // Update images and rebuild ActionPage
-      setState(() {
-        _currentImages = remainingImages;
-        _buildPages();
-      });
-      // Move to next page (which is the new ActionPage with remaining images)
-      _nextPage();
-    }
+  void _handleImageSelected(
+    int selectedImage,
+    List<int> remainingImages,
+    int pageNumber,
+  ) {
+    // Update the corresponding ActionPage's image list
+    setState(() {
+      switch (pageNumber) {
+        case 1:
+          _actionPage2Images = remainingImages;
+          break;
+        case 2:
+          _actionPage3Images = remainingImages;
+          break;
+        case 3:
+          _actionPage4Images = remainingImages;
+          break;
+        case 4:
+          break;
+      }
+      _buildPages();
+    });
+    // Don't automatically navigate - user must use arrow/swipe
   }
 
   void _nextPage() {
@@ -127,13 +164,23 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
       onKeyEvent: (event) {
         if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-            // Chỉ cho phép previous nếu không ở trong ActionPages và không đang animation
-            if (!_isInActionPages && !_isAnimating) {
+            // Chỉ cho phép previous nếu không đang animation
+            if (!_isAnimating) {
               _previousPage();
             }
           } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-            // Chỉ cho phép next nếu không ở trong ActionPages và không đang animation
-            if (!_isInActionPages && !_isAnimating) {
+            // Cho phép next nếu:
+            // - Không đang animation
+            // - Nếu trong ActionPages thì phải đã click vào ảnh
+            bool canNavigate = !_isAnimating;
+            if (canNavigate && _isInActionPages) {
+              int actionPageNumber = _currentPage - _firstActionPageIndex;
+              canNavigate =
+                  actionPageNumber >= 0 &&
+                  actionPageNumber < _hasSelectedImageList.length &&
+                  _hasSelectedImageList[actionPageNumber];
+            }
+            if (canNavigate) {
               _nextPage();
             }
           }
@@ -148,7 +195,15 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
             viewportFraction: 1.0,
             enableInfiniteScroll: false,
             scrollPhysics:
-                (_isInActionPages || _isAnimating)
+                // Disable swipe when animating
+                // Or when in ActionPages and haven't selected image yet
+                _isAnimating ||
+                        (_isInActionPages &&
+                            _currentPage >= _firstActionPageIndex &&
+                            _currentPage - _firstActionPageIndex <
+                                _hasSelectedImageList.length &&
+                            !_hasSelectedImageList[_currentPage -
+                                _firstActionPageIndex])
                     ? const NeverScrollableScrollPhysics()
                     : null,
             onPageChanged: (index, reason) {
