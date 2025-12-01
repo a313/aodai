@@ -40,6 +40,7 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
   final int _firstActionPageIndex = 3; // Index của ActionPage đầu tiên
   final int _lastActionPageIndex = 6; // Index của ActionPage cuối cùng
   bool _isInActionPages = false;
+  bool _isAnimating = false;
 
   @override
   void initState() {
@@ -52,12 +53,34 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
       Page1(),
       Page2(),
       Page3(),
-      ActionPage(images: _currentImages, onImageSelected: _handleImageSelected),
-      ActionPage(images: _currentImages, onImageSelected: _handleImageSelected),
-      ActionPage(images: _currentImages, onImageSelected: _handleImageSelected),
-      ActionPage(images: _currentImages, onImageSelected: _handleImageSelected),
+      ActionPage(
+        images: _currentImages,
+        onImageSelected: _handleImageSelected,
+        onAnimationStateChanged: _handleAnimationStateChanged,
+      ),
+      ActionPage(
+        images: _currentImages,
+        onImageSelected: _handleImageSelected,
+        onAnimationStateChanged: _handleAnimationStateChanged,
+      ),
+      ActionPage(
+        images: _currentImages,
+        onImageSelected: _handleImageSelected,
+        onAnimationStateChanged: _handleAnimationStateChanged,
+      ),
+      ActionPage(
+        images: _currentImages,
+        onImageSelected: _handleImageSelected,
+        onAnimationStateChanged: _handleAnimationStateChanged,
+      ),
       Page7(),
     ];
+  }
+
+  void _handleAnimationStateChanged(bool isAnimating) {
+    setState(() {
+      _isAnimating = isAnimating;
+    });
   }
 
   void _handleImageSelected(int selectedImage, List<int> remainingImages) {
@@ -104,13 +127,13 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
       onKeyEvent: (event) {
         if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-            // Chỉ cho phép previous nếu không ở trong ActionPages
-            if (!_isInActionPages) {
+            // Chỉ cho phép previous nếu không ở trong ActionPages và không đang animation
+            if (!_isInActionPages && !_isAnimating) {
               _previousPage();
             }
           } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-            // Chỉ cho phép next nếu không ở trong ActionPages
-            if (!_isInActionPages) {
+            // Chỉ cho phép next nếu không ở trong ActionPages và không đang animation
+            if (!_isInActionPages && !_isAnimating) {
               _nextPage();
             }
           }
@@ -125,7 +148,9 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
             viewportFraction: 1.0,
             enableInfiniteScroll: false,
             scrollPhysics:
-                _isInActionPages ? const NeverScrollableScrollPhysics() : null,
+                (_isInActionPages || _isAnimating)
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
             onPageChanged: (index, reason) {
               setState(() {
                 _currentPage = index;
