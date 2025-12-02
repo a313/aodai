@@ -1,4 +1,5 @@
 import 'package:aodai/pages/page4.dart';
+import 'package:aodai/pages/page5.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,12 +42,13 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
   List<int> _actionPage3Images = [1, 2, 3, 4];
   List<int> _actionPage4Images = [1, 2, 3, 4];
   List<Widget> _pages = [];
-  final int _firstActionPageIndex = 3; // Index của ActionPage đầu tiên
-  final int _lastActionPageIndex = 6; // Index của ActionPage cuối cùng
+  // ActionPage indices: 3, 5, 7, 9
+  final List<int> _actionPageIndices = [3, 5, 7, 9];
   bool _isInActionPages = false;
   bool _isAnimating = false;
   // Track if user has selected an image for each ActionPage (index 0-3 corresponds to ActionPage 1-4)
   final List<bool> _hasSelectedImageList = [false, false, false, false];
+  final List<int> _selectedImage = [-1, -1, -1, -1];
 
   @override
   void initState() {
@@ -68,6 +70,10 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
                 _handleImageSelected(selectedImage, remainingImages, 1),
         onAnimationStateChanged: _handleAnimationStateChanged,
       ),
+      Page5(
+        key: ValueKey(_selectedImage[0]),
+        image: "assets/png/${_selectedImage[0]}.png",
+      ),
       //3
       ActionPage(
         key: ValueKey(_actionPage2Images),
@@ -76,6 +82,10 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
             (selectedImage, remainingImages) =>
                 _handleImageSelected(selectedImage, remainingImages, 2),
         onAnimationStateChanged: _handleAnimationStateChanged,
+      ),
+      Page5(
+        key: ValueKey(_selectedImage[1]),
+        image: "assets/png/${_selectedImage[1]}.png",
       ),
       //2
       ActionPage(
@@ -86,6 +96,10 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
                 _handleImageSelected(selectedImage, remainingImages, 3),
         onAnimationStateChanged: _handleAnimationStateChanged,
       ),
+      Page5(
+        key: ValueKey(_selectedImage[2]),
+        image: "assets/png/${_selectedImage[2]}.png",
+      ),
       //1
       ActionPage(
         key: ValueKey(_actionPage4Images),
@@ -94,6 +108,10 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
             (selectedImage, remainingImages) =>
                 _handleImageSelected(selectedImage, remainingImages, 4),
         onAnimationStateChanged: _handleAnimationStateChanged,
+      ),
+      Page5(
+        key: ValueKey(_selectedImage[3]),
+        image: "assets/png/${_selectedImage[3]}.png",
       ),
       Page7(),
     ];
@@ -104,7 +122,7 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
       _isAnimating = isAnimating;
       // When animation completes, mark that user has selected an image for current ActionPage
       if (!isAnimating && _isInActionPages) {
-        int actionPageNumber = _currentPage - _firstActionPageIndex;
+        int actionPageNumber = _actionPageIndices.indexOf(_currentPage);
         if (actionPageNumber >= 0 &&
             actionPageNumber < _hasSelectedImageList.length) {
           _hasSelectedImageList[actionPageNumber] = true;
@@ -123,14 +141,18 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
       switch (pageNumber) {
         case 1:
           _actionPage2Images = remainingImages;
+          _selectedImage[0] = selectedImage;
           break;
         case 2:
           _actionPage3Images = remainingImages;
+          _selectedImage[1] = selectedImage;
           break;
         case 3:
           _actionPage4Images = remainingImages;
+          _selectedImage[2] = selectedImage;
           break;
         case 4:
+          _selectedImage[3] = selectedImage;
           break;
       }
       _buildPages();
@@ -174,7 +196,7 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
             // - Nếu trong ActionPages thì phải đã click vào ảnh
             bool canNavigate = !_isAnimating;
             if (canNavigate && _isInActionPages) {
-              int actionPageNumber = _currentPage - _firstActionPageIndex;
+              int actionPageNumber = _actionPageIndices.indexOf(_currentPage);
               canNavigate =
                   actionPageNumber >= 0 &&
                   actionPageNumber < _hasSelectedImageList.length &&
@@ -199,20 +221,17 @@ class _AoDaiPageViewState extends State<AoDaiPageView> {
                 // Or when in ActionPages and haven't selected image yet
                 _isAnimating ||
                         (_isInActionPages &&
-                            _currentPage >= _firstActionPageIndex &&
-                            _currentPage - _firstActionPageIndex <
-                                _hasSelectedImageList.length &&
-                            !_hasSelectedImageList[_currentPage -
-                                _firstActionPageIndex])
+                            _actionPageIndices.contains(_currentPage) &&
+                            !_hasSelectedImageList[_actionPageIndices.indexOf(
+                              _currentPage,
+                            )])
                     ? const NeverScrollableScrollPhysics()
                     : null,
             onPageChanged: (index, reason) {
               setState(() {
                 _currentPage = index;
-                // Check if we're in ActionPages range
-                _isInActionPages =
-                    index >= _firstActionPageIndex &&
-                    index <= _lastActionPageIndex;
+                // Check if we're in ActionPages
+                _isInActionPages = _actionPageIndices.contains(index);
               });
             },
           ),

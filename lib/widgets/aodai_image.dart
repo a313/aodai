@@ -3,14 +3,19 @@ import 'package:flutter/material.dart';
 class AoDaiImage extends StatelessWidget {
   final String imagePath;
   final BoxFit? fit;
+  final double ratio;
 
-  const AoDaiImage({super.key, required this.imagePath, this.fit});
+  const AoDaiImage({
+    super.key,
+    required this.imagePath,
+    this.fit,
+    this.ratio = 0.6,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: MediaQuery.of(context).size.width / 5,
-      height: MediaQuery.of(context).size.height * 0.6,
+      height: MediaQuery.of(context).size.height * ratio,
       child: Image.asset(imagePath, fit: fit),
     );
   }
